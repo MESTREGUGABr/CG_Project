@@ -9,6 +9,7 @@ class Mesh:
         self.vbo = None
         self.ebo = None
         self.index_count = 0
+        self.bottom_y = 0.0
 
     def load_obj(self, filepath):
         positions = []
@@ -80,6 +81,7 @@ class Mesh:
         max_extent = np.abs(pos).max()
         if max_extent > 0:
             pos /= max_extent
+        self.bottom_y = float(pos[:, 1].min())
         return pos.tolist()
 
     def _compute_normals(self, positions, indices):

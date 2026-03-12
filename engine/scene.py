@@ -1,4 +1,5 @@
 import os
+from engine.transform import identity, normal_matrix, perspective, translate
 from engine.mesh import Mesh
 from engine.camera import Camera
 from engine.light import SunLight, SpotLightManager
@@ -21,6 +22,7 @@ class Scene:
         self.object_color = [0.7, 0.7, 0.75]
         self.ambient_strength = 0.15
         self.models_dir = models_dir
+        self.pedestal_top_y = -0.85 
 
     def load_models(self):
         obj_files = sorted([f for f in os.listdir(self.models_dir) if f.endswith('.obj')])
@@ -66,7 +68,10 @@ class Scene:
         aspect = width / height if height > 0 else 1.0
         proj = perspective(45.0, aspect, 0.1, 100.0)
         view = self.camera.get_view_matrix()
-        model = self.model_matrix
+        mesh = self.meshes[self.active_mesh_index]
+        lift = self.pedestal_top_y - mesh.bottom_y
+        #print(f"bottom_y={mesh.bottom_y:.3f}  pedestal_top_y={self.pedestal_top_y:.3f}  lift={lift:.3f}")
+        model = translate(0, lift, 0)
         norm_mat = normal_matrix(model)
 
         shader.set_mat4("projection", proj)

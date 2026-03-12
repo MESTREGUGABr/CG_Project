@@ -10,7 +10,7 @@ class Camera:
         self.yaw = yaw
         self.pitch = pitch
         self.min_distance = 0.5
-        self.max_distance = 20.0
+        self.max_distance = 5.5
         self.min_pitch = -89.0
         self.max_pitch = 89.0
         self.sensitivity = 0.3

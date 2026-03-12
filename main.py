@@ -2,7 +2,10 @@ import os
 import sys
 import pygame
 from OpenGL.GL import *
+import numpy as np
 
+from engine.transform import identity, normal_matrix
+from engine.room import Room
 from engine.shader import Shader
 from engine.scene import Scene
 from engine.grid import Grid
@@ -63,6 +66,7 @@ def print_controls():
 
 
 def main():
+    scenario = choose_scenario()
     screen = init_pygame()
     init_opengl()
     print_controls()
@@ -80,9 +84,12 @@ def main():
     # Load scene
     scene = Scene(MODELS_DIR)
     scene.load_models()
+    
+    room = create_room() if scenario == 1 else None
+    grid = create_grid() if scenario == 2 else None
 
-    # Create grid floor
-    grid = Grid(size=8.0, y=-1.0)
+    if room:
+        scene.pedestal_top_y = room.pedestal_top_y
 
     input_handler = InputHandler()
     clock = pygame.time.Clock()
@@ -140,14 +147,13 @@ def main():
         # Draw 3D model
         scene.render(model_shader, width, height)
 
-        # Draw grid floor
-        aspect = width / height if height > 0 else 1.0
-        proj = perspective(45.0, aspect, 0.1, 100.0)
-        view = scene.camera.get_view_matrix()
-        grid_shader.use()
-        grid_shader.set_mat4("projection", proj)
-        grid_shader.set_mat4("view", view)
-        grid.draw()
+        # Draw room
+        if room:
+            draw_room(room, model_shader)
+
+        # Draw grid
+        if grid:
+            draw_grid(grid, grid_shader, scene, width, height)
 
         # Update window title with info
         mode_name = "Sun" if scene.light_mode == Scene.LIGHT_MODE_SUN else "Spotlights"
@@ -161,10 +167,44 @@ def main():
 
     # Cleanup
     scene.cleanup()
-    grid.cleanup()
+    if grid:
+        grid.cleanup()
+    if room:
+        room.cleanup()
     pygame.quit()
     sys.exit(0)
 
+def draw_room(room, shader):
+    shader.use()
+    shader.set_mat4("model", identity())
+    shader.set_mat3("normalMatrix", np.eye(3, dtype=np.float32))
+    shader.set_vec3("objectColor", [0.92, 0.92, 0.90])
+    room.draw()
+
+def draw_grid(grid, grid_shader, scene, width, height):
+    aspect = width / height if height > 0 else 1.0
+    proj = perspective(45.0, aspect, 0.1, 100.0)
+    view = scene.camera.get_view_matrix()
+    grid_shader.use()
+    grid_shader.set_mat4("projection", proj)
+    grid_shader.set_mat4("view", view)
+    grid.draw()
+
+def create_room():
+    return Room(size=6.0, height=4.0, pedestal_radius=1.0, pedestal_height=0.15)
+
+def create_grid():
+    return Grid(size=8.0, y=-1.0)
+
+def choose_scenario():
+    print("Escolha o cenário:")
+    print("  1 - Room")
+    print("  2 - Grid")
+    while True:
+        choice = input("Digite 1 ou 2: ").strip()
+        if choice in ("1", "2"):
+            return int(choice)
+        print("  Opção inválida, tente novamente.")
 
 if __name__ == "__main__":
     main()
